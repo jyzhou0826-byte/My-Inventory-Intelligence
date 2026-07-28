@@ -1,13 +1,13 @@
 const C = {
-  snow: "F6F8FB", paper: "FFFFFF", ink: "0F172A", muted: "64748B", line: "DCE3EC",
-  pine: "2563EB", sage: "93C5FD", mist: "E8F0FE", sky: "06B6D4",
-  clay: "EF4444", ochre: "F59E0B", moss: "10B981",
+  snow: "F4F7FB", paper: "FFFFFF", ink: "071B3A", muted: "66758D", line: "D3DDEA",
+  navy: "082A5C", navy2: "031B3E", pine: "1261B5", sage: "8AB8E8", mist: "EAF2FB", sky: "11899A",
+  clay: "E52B38", ochre: "F28A00", moss: "009B72", yellow: "FFD538",
 };
 const FONT = "Microsoft JhengHei";
 const wan = (n: number) => Number((n / 10000).toFixed(1));
 const pct = (n: number) => `${((Number.isFinite(n) ? n : 0) * 100).toFixed(1)}%`;
 
-export async function exportInventoryPptx(data: any) {
+export async function exportInventoryPptx(data: any, outputFileName?: string) {
   const { default: PptxGenJS } = await import("pptxgenjs");
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE";
@@ -31,32 +31,46 @@ export async function exportInventoryPptx(data: any) {
     });
   const page = (slide: any, eyebrow: string, title: string, number: number) => {
     slide.background = { color: C.snow };
-    text(slide, eyebrow.toUpperCase(), .62, .34, 5.5, .25, {
-      fontSize: 10, bold: true, color: C.pine, charSpacing: 1.6,
+    slide.addShape(pptx.ShapeType.rect, {
+      x: 0, y: 0, w: 13.333, h: 1.05,
+      fill: { color: C.navy }, line: { color: C.navy, transparency: 100 },
     });
-    text(slide, title, .62, .64, 11.8, .66, { fontSize: 35, bold: true });
-    slide.addShape(pptx.ShapeType.line, {
-      x: .62, y: 1.32, w: 12.08, h: 0, line: { color: C.line, width: 1 },
+    slide.addShape(pptx.ShapeType.rect, {
+      x: .2, y: .23, w: .05, h: .55,
+      fill: { color: "54A4F3" }, line: { color: "54A4F3", transparency: 100 },
     });
-    text(slide, String(number).padStart(2, "0"), 12.05, 7.08, .62, .2, {
-      fontSize: 9, color: C.muted, align: "right",
+    text(slide, title, .38, .18, 8.45, .65, {
+      fontSize: title.length > 18 ? 21 : 27, bold: true, color: C.paper,
+    });
+    text(slide, eyebrow.toUpperCase(), 8.88, .25, 1.22, .28, {
+      fontSize: 8, bold: true, color: "BFD8F5", charSpacing: .6, align: "right",
+    });
+    slide.addShape(pptx.ShapeType.roundRect, {
+      x: 10.22, y: .19, w: 2.42, h: .52, rectRadius: .06,
+      fill: { color: C.navy }, line: { color: "BFD8F5", width: .8 },
+    });
+    text(slide, `${data.meta.year} ${data.meta.quarters.join("–")}`, 10.38, .31, 2.1, .2, {
+      fontSize: 10, bold: true, color: C.paper, align: "center",
+    });
+    text(slide, `My Inventory Intelligence  |  ${String(number).padStart(2, "0")}`, 10.05, 7.1, 2.62, .16, {
+      fontSize: 8, color: C.muted, align: "right",
     });
   };
   const metric = (slide: any, x: number, y: number, w: number, label: string, value: string, note: string, color = C.pine) => {
     slide.addShape(pptx.ShapeType.rect, {
-      x, y, w, h: 1.28, fill: { color: C.paper }, line: { color: C.line, width: 1 }, radius: .08,
+      x, y, w, h: 1.28, fill: { color: C.paper }, line: { color: C.line, width: 1 }, radius: .1,
     });
     slide.addShape(pptx.ShapeType.rect, {
       x, y, w: .07, h: 1.28, fill: { color }, line: { color, transparency: 100 },
     });
-    text(slide, label, x + .22, y + .12, w - .42, .22, { fontSize: 11, bold: true, color: C.muted });
-    text(slide, value, x + .22, y + .39, w - .42, .42, { fontSize: 23, bold: true });
+    text(slide, label, x + .22, y + .12, w - .42, .22, { fontSize: 11, bold: true, color });
+    text(slide, value, x + .22, y + .39, w - .42, .42, { fontSize: 23, bold: true, color: C.ink });
     text(slide, note, x + .22, y + .91, w - .42, .2, { fontSize: 9.5, color: C.muted });
   };
   const source = (slide: any) => text(
     slide,
     `資料來源：${data.meta.sourceFiles?.join("、") || "使用者上傳資料"}｜${data.meta.year} ${data.meta.latestQuarter}`,
-    .62, 7.04, 10.5, .2, { fontSize: 8.5, color: "87928E" },
+    .62, 7.04, 9.25, .2, { fontSize: 8.5, color: "87928E" },
   );
   const svgData = (svg: string) => {
     const bytes = new TextEncoder().encode(svg);
@@ -390,7 +404,7 @@ export async function exportInventoryPptx(data: any) {
     slide.addImage({
       data: donutChart(
         ["缺料", "安全", "積壓", "呆滯"], riskCounts, [C.clay, C.moss, C.ochre, "7C3AED"],
-        rows.length ? pct(groupSafe / rows.length) : "—", `${groupName} 健康度`,
+        rows.length ? pct(groupSafe / rows.length) : "—", `${groupName} HEALTH`,
       ),
       x: .62, y: 3.18, w: 6.15, h: 3.35,
     });
@@ -502,6 +516,6 @@ export async function exportInventoryPptx(data: any) {
   }
 
   await pptx.writeFile({
-    fileName: `${data.meta.model}_${data.meta.year}_${data.meta.quarters.join("-")}_庫存決策簡報_現代商務資訊圖表風.pptx`,
+    fileName: outputFileName || `${data.meta.model}_${data.meta.year}_${data.meta.quarters.join("-")}_庫存決策簡報_管理層儀表板風.pptx`,
   });
 }

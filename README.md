@@ -26,6 +26,8 @@ pnpm run build
 - LP3、FORGN 與指定 KD 專案分類
 - 庫存健康度、缺料、積壓與呆滯風險判定
 - 季度總庫存金額趨勢分析
+- PPTX 匯出採深藍管理層儀表板風格，並提供獨立 Python CLI：
+  `python3 scripts/export_inventory_pptx.py --input app/data/dashboard.json --output inventory-report.pptx`
 - 生產需求及 QoQ 趨勢
 - 生產計畫差異、備料調整與庫存影響分析
 - 管理層儀表板 PPTX 匯出
