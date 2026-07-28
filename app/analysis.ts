@@ -135,9 +135,9 @@ export async function analyzeUploads(modelInput: string, selection: UploadSelect
       const inventory = numberOf(row["總庫存金額"]);
       const net = numberOf(row["淨庫存金額"]);
       const [risk, severity, action] = diagnose(group, level, demand, qty);
-      return { model, part:String(row["件號"]), partName:String(row["件名"] ?? "").trim(), plant:String(row["廠別"] ?? ""), group, rawGroup:String(row["Material Group"] ?? ""), reason, note, kdProject:project, date:String(row["日期"] ?? ""), manual:numberOf(row["策略備料金額(人工維護)"]), system:numberOf(row["策略備料金額(系統計算)"]), demand, inventory, qty, net, wip:inventory-net, level, risk, severity, action, quarter };
+      return { model, part:String(row["件號"]), partName:String(row["件名"] ?? "").trim(), plant:String(row["廠別"] ?? ""), group, rawGroup:String(row["Material Group"] ?? ""), reason, note, kdProject:project, date:String(row["日期"] ?? ""), manual:numberOf(row["策略備料金額(人工維護)"]), system:numberOf(row["策略備料金額(系統計算)"]), demand, inventory, qty, net, level, risk, severity, action, quarter };
     }).filter((item): item is NonNullable<typeof item> => item !== null);
-    const totals = Object.fromEntries(["manual","system","demand","inventory","net","wip"].map(key => [key, items.reduce((sum, row) => sum + row[key], 0)]));
+    const totals = Object.fromEntries(["manual","system","demand","inventory","net"].map(key => [key, items.reduce((sum, row) => sum + row[key], 0)]));
     const statusNames = ["安全","缺料","缺料風險","積壓","呆滯","無需求庫存","無需求／無庫存"];
     const counts = Object.fromEntries(statusNames.map(risk => [risk, items.filter(row => row.risk === risk).length]));
     const groupTotals = Object.fromEntries(["FORGN","LP3","KD","OTHER"].map(group => [group, items.filter(row => row.group === group).reduce((sum,row)=>sum+row.inventory,0)]));
@@ -148,7 +148,7 @@ export async function analyzeUploads(modelInput: string, selection: UploadSelect
   quarters.sort((a,b) => a.sortKey - b.sortKey);
   const latestQuarter = quarters.at(-1)?.quarter;
   const latestItems = allItems.filter(row => row.quarter === latestQuarter);
-  const latestTotals = Object.fromEntries(["manual","system","demand","inventory","net","wip"].map(key => [key, latestItems.reduce((sum,row)=>sum+row[key],0)]));
+  const latestTotals = Object.fromEntries(["manual","system","demand","inventory","net"].map(key => [key, latestItems.reduce((sum,row)=>sum+row[key],0)]));
   const statusNames = ["安全","缺料","缺料風險","積壓","呆滯","無需求庫存","無需求／無庫存"];
   const latestCounts = Object.fromEntries(statusNames.map(risk => [risk, latestItems.filter(row => row.risk === risk).length]));
   const groups: Record<string, any> = {};

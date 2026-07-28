@@ -23,7 +23,6 @@ export async function exportInventoryPptx(data: any) {
   const previous = quarters.length > 1 ? quarters[quarters.length - 2] : null;
   const qoq = previous?.totals?.inventory
     ? (totals.inventory - previous.totals.inventory) / previous.totals.inventory : null;
-  const wip = totals.wip ?? totals.inventory - totals.net;
 
   const text = (slide: any, value: string, x: number, y: number, w: number, h: number, options: any = {}) =>
     slide.addText(value, {
@@ -182,7 +181,7 @@ export async function exportInventoryPptx(data: any) {
       text(slide, project.type, x + .28, 1.92, 1.6, .25, { fontSize: 11, bold: true, color: project.color });
       text(slide, project.key, x + .28, 2.28, 4.9, .45, { fontSize: 27, bold: true });
       metric(slide, x + .28, 3.05, 2.48, "總庫存金額", p ? `${wan(p.inventory).toLocaleString()} 萬元` : "本期無資料", p ? `${p.count} 件` : "未補造數字", project.color);
-      metric(slide, x + 3.0, 3.05, 2.48, "淨庫存金額", p ? `${wan(p.net).toLocaleString()} 萬元` : "—", "可用庫存分析", C.moss);
+      metric(slide, x + 3.0, 3.05, 2.48, "生產需求金額", p ? `${wan(p.demand).toLocaleString()} 萬元` : "—", "專案需求指標", C.sky);
       text(slide, project.prompt, x + .28, 4.68, 5.22, .38, { fontSize: 15, bold: true });
       text(slide, "分析與建議", x + .28, 5.28, 1.35, .24, { fontSize: 12, bold: true, color: C.muted });
       slide.addShape(pptx.ShapeType.line, { x: x + 1.58, y: 5.46, w: 3.92, h: 0, line: { color: C.line, width: 1 } });
@@ -204,7 +203,7 @@ export async function exportInventoryPptx(data: any) {
     const insights = [
       ["01", "庫存增速", qoq === null ? "需累積兩季以上判讀 QoQ。" : `最新一季庫存${qoq >= 0 ? "增加" : "減少"} ${pct(Math.abs(qoq))}。`],
       ["02", "風險結構", `積壓 ${data.latest.counts.積壓} 件，是最大宗風險。`],
-      ["03", "庫存結構", `淨庫存 ${wan(totals.net).toLocaleString()} 萬元；WIP ${wan(wip).toLocaleString()} 萬元。`],
+      ["03", "總庫存金額", `最新一季 ${wan(totals.inventory).toLocaleString()} 萬元，應搭配需求與高風險金額判讀。`],
     ];
     insights.forEach((item, index) => {
       const y = 3.85 + index * .78;
@@ -294,43 +293,38 @@ export async function exportInventoryPptx(data: any) {
       qoq === null ? "本期分析基準" : `較上季 ${qoq >= 0 ? "+" : ""}${pct(qoq)}`, C.pine);
     metric(slide, 4.75, 1.62, 3.82, "生產需求金額", `${wan(totals.demand).toLocaleString()} 萬元`,
       `需求覆蓋率 ${coverage.toFixed(2)}x`, C.sky);
-    metric(slide, 8.88, 1.62, 3.82, "淨庫存金額", `${wan(totals.net).toLocaleString()} 萬元`,
-      `占總庫存 ${totals.inventory ? pct(totals.net / totals.inventory) : "—"}`, "7C3AED");
-    metric(slide, .62, 3.25, 3.82, "WIP（擺線量）", `${wan(wip).toLocaleString()} 萬元`,
-      `在製品，不屬於可用庫存`, C.sky);
+    metric(slide, 8.88, 1.62, 3.82, "QoQ 變化", qoq === null ? "基準季" : `${qoq >= 0 ? "+" : ""}${pct(qoq)}`,
+      previous ? `${previous.quarter} → ${data.meta.latestQuarter}` : "無前期", qoq !== null && qoq > 0 ? C.clay : C.moss);
+    metric(slide, .62, 3.25, 3.82, "需求覆蓋率", `${coverage.toFixed(2)} x`,
+      `總庫存金額 ÷ 生產需求金額`, C.sky);
     metric(slide, 4.75, 3.25, 3.82, "高風險庫存金額", `${wan(data.latest.highRiskInventory).toLocaleString()} 萬元`,
       `高風險占比 ${pct(data.latest.highRiskRatio)}`, C.clay);
     metric(slide, 8.88, 3.25, 3.82, "有效件號", `${data.latest.items} 件`,
       `安全 ${data.latest.counts.安全}｜缺料 ${data.latest.counts.缺料}｜積壓 ${data.latest.counts.積壓}｜呆滯 ${data.latest.counts.呆滯}`, C.moss);
     text(slide, "管理判讀", .62, 5.08, 1.6, .32, { fontSize: 20, bold: true });
     text(slide,
-      `目前每 1 元生產需求由 ${coverage.toFixed(2)} 元庫存覆蓋；總庫存由淨庫存與 WIP 組成，高風險資金應依金額排序推動改善。`,
+      `目前每 1 元生產需求由 ${coverage.toFixed(2)} 元總庫存覆蓋；高風險資金應依金額排序推動改善。`,
       .62, 5.55, 11.6, .72, { fontSize: 17, color: C.muted, valign: "top" });
     source(slide);
   }
 
   {
     const slide = pptx.addSlide();
-    page(slide, "Inventory structure", "總庫存由淨庫存與 WIP 組成", 7);
-    metric(slide, .62, 1.62, 3.82, "總庫存金額", `${wan(totals.inventory).toLocaleString()} 萬元`, "淨庫存＋WIP", C.pine);
-    metric(slide, 4.75, 1.62, 3.82, "淨庫存金額", `${wan(totals.net).toLocaleString()} 萬元`, "可用庫存分析基礎", C.moss);
-    metric(slide, 8.88, 1.62, 3.82, "WIP（擺線量）", `${wan(wip).toLocaleString()} 萬元`, "生產線在製品", C.sky);
-    text(slide, "金額組成", .62, 3.28, 2, .3, { fontSize: 20, bold: true });
+    page(slide, "Total inventory", "以總庫存金額掌握季度變化與資金風險", 7);
+    metric(slide, .62, 1.62, 3.82, "總庫存金額", `${wan(totals.inventory).toLocaleString()} 萬元`, "最新季度實績", C.pine);
+    metric(slide, 4.75, 1.62, 3.82, "QoQ 變化", qoq === null ? "基準季" : `${qoq >= 0 ? "+" : ""}${pct(qoq)}`, previous ? `${previous.quarter} → ${data.meta.latestQuarter}` : "無前期", qoq !== null && qoq > 0 ? C.clay : C.moss);
+    metric(slide, 8.88, 1.62, 3.82, "高風險庫存", `${wan(data.latest.highRiskInventory).toLocaleString()} 萬元`, `占總庫存 ${pct(data.latest.highRiskRatio)}`, C.clay);
+    text(slide, "季度總庫存趨勢", .62, 3.28, 2.5, .3, { fontSize: 20, bold: true });
     slide.addShape(pptx.ShapeType.rect, {
       x: .62, y: 3.86, w: 11.76, h: .52, fill: { color: "E2E8F0" }, line: { color: "E2E8F0", transparency: 100 },
     });
     slide.addShape(pptx.ShapeType.rect, {
-      x: .62, y: 3.86, w: 11.76 * (totals.inventory ? totals.net / totals.inventory : 0), h: .52, fill: { color: C.pine }, line: { color: C.pine, transparency: 100 },
+      x: .62, y: 3.86, w: 11.76, h: .52, fill: { color: C.pine }, line: { color: C.pine, transparency: 100 },
     });
-    slide.addShape(pptx.ShapeType.rect, {
-      x: .62 + 11.76 * (totals.inventory ? totals.net / totals.inventory : 0), y: 3.86, w: 11.76 * (totals.inventory ? wip / totals.inventory : 0), h: .52,
-      fill: { color: C.sky }, line: { color: C.sky, transparency: 100 },
-    });
-    text(slide, `淨庫存 ${wan(totals.net).toLocaleString()} 萬元`, .62, 4.55, 3.5, .28, { fontSize: 16, bold: true, color: C.pine });
-    text(slide, `WIP ${wan(wip).toLocaleString()} 萬元`, 4.35, 4.55, 3.5, .28, { fontSize: 16, bold: true, color: C.sky });
+    text(slide, `最新總庫存 ${wan(totals.inventory).toLocaleString()} 萬元`, .62, 4.55, 4.2, .28, { fontSize: 16, bold: true, color: C.pine });
     text(slide, "管理定義", .62, 5.25, 1.6, .28, { fontSize: 20, bold: true });
-    text(slide, "WIP 為生產線在製品，不屬於可用庫存；生產需求為需求指標，不屬於庫存組成。", 2.12, 5.19, 9.6, .42, { fontSize: 18, bold: true, color: C.ink });
-    text(slide, "策略備料金額已自庫存決策分析移除。", .62, 5.86, 11.6, .45, {
+    text(slide, "本頁僅以總庫存金額呈現資金規模，不進行庫存組成拆分。", 2.12, 5.19, 9.6, .42, { fontSize: 18, bold: true, color: C.ink });
+    text(slide, "策略備料金額不納入庫存決策分析。", .62, 5.86, 11.6, .45, {
       fontSize: 16, color: C.muted,
     });
     source(slide);
@@ -338,25 +332,19 @@ export async function exportInventoryPptx(data: any) {
 
   {
     const slide = pptx.addSlide();
-    page(slide, "Quarterly inventory structure", "每季總庫存由淨庫存與 WIP 堆疊呈現", 8);
+    page(slide, "Quarterly total inventory", "每季僅呈現總庫存金額", 8);
     const labels = quarters.map((q: any) => `${String(data.meta.year).slice(-2)}/${q.quarter}`);
     const chartMax = Math.max(...quarters.map((q: any) => q.totals.inventory), 1);
     quarters.forEach((q: any, index: number) => {
       const x = 1.0 + index * (8.0 / Math.max(quarters.length, 1));
       const height = 3.9 * q.totals.inventory / chartMax;
-      const wipAmount = q.totals.wip ?? q.totals.inventory - q.totals.net;
-      const netHeight = height * (q.totals.inventory ? q.totals.net / q.totals.inventory : 0);
-      const wipHeight = height - netHeight;
       text(slide, `${wan(q.totals.inventory).toLocaleString()}`, x - .18, 5.85 - height, 1.45, .24, { fontSize: 13, bold: true, align: "center" });
-      slide.addShape(pptx.ShapeType.rect, { x, y: 6.12 - netHeight, w: 1.08, h: netHeight, fill: { color: C.pine }, line: { color: C.pine, transparency: 100 } });
-      slide.addShape(pptx.ShapeType.rect, { x, y: 6.12 - height, w: 1.08, h: wipHeight, fill: { color: C.sky }, line: { color: C.sky, transparency: 100 } });
+      slide.addShape(pptx.ShapeType.rect, { x, y: 6.12 - height, w: 1.08, h: height, fill: { color: C.pine }, line: { color: C.pine, transparency: 100 } });
       text(slide, labels[index], x - .18, 6.24, 1.45, .24, { fontSize: 13, bold: true, align: "center" });
-      void wipAmount;
     });
-    metric(slide, 9.35, 1.62, 3.35, "最新總庫存", `${wan(totals.inventory).toLocaleString()} 萬元`, "淨庫存＋WIP", C.pine);
-    metric(slide, 9.35, 3.18, 3.35, "最新淨庫存", `${wan(totals.net).toLocaleString()} 萬元`, "可用庫存分析基礎", C.moss);
-    metric(slide, 9.35, 4.74, 3.35, "最新 WIP", `${wan(wip).toLocaleString()} 萬元`, "在製品", C.sky);
-    text(slide, "■ 淨庫存金額　■ WIP（擺線量）", .98, 6.7, 6.1, .25, { fontSize: 11, color: C.muted });
+    metric(slide, 9.35, 1.62, 3.35, "最新總庫存", `${wan(totals.inventory).toLocaleString()} 萬元`, "本期實績", C.pine);
+    metric(slide, 9.35, 3.18, 3.35, "QoQ 變化", qoq === null ? "基準季" : `${qoq >= 0 ? "+" : ""}${pct(qoq)}`, previous ? `${previous.quarter} → ${data.meta.latestQuarter}` : "無前期", qoq !== null && qoq > 0 ? C.clay : C.moss);
+    metric(slide, 9.35, 4.74, 3.35, "高風險占比", pct(data.latest.highRiskRatio), "依風險料號金額計算", C.clay);
     source(slide);
   }
 
@@ -374,7 +362,7 @@ export async function exportInventoryPptx(data: any) {
     source(slide);
   }
 
-  for (const [groupIndex, groupName] of ["FORGN", "LP3", "KD"].entries()) {
+  for (const [groupIndex, groupName] of ["FORGN", "LP3"].entries()) {
     const slide = pptx.addSlide();
     const group = data.groups?.[groupName];
     const rows = (data.latestItems ?? []).filter((item: any) => item.group === groupName);
