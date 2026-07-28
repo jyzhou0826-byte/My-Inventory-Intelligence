@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import seedData from "./data/dashboard.json";
 import { analyzeUploads, type UploadSelection } from "./analysis";
 import { exportInventoryPptx } from "./pptx-export";
 
-let data: any = seedData;
+let data: any = null;
 
 type Tab = "Executive" | "ALL" | "FORGN" | "LP3" | "KD" | "QoQ" | "Plan";
-type Item = (typeof seedData.latestItems)[number] & { partName?: string };
+type Item = { partName?: string; [key: string]: any };
 
 const tabs: { key: Tab; label: string }[] = [
   { key: "Executive", label: "Executive" }, { key: "ALL", label: "All Inventory" },
@@ -208,11 +207,11 @@ function PlanPage() {
 }
 
 export default function Home() {
-  const [started,setStarted]=useState(false); const [tab,setTab]=useState<Tab>("Executive"); const [period,setPeriod]=useState("2026 Q1–Q3"); const [activeData,setActiveData]=useState<any>(seedData);
+  const [started,setStarted]=useState(false); const [tab,setTab]=useState<Tab>("Executive"); const [period,setPeriod]=useState(""); const [activeData,setActiveData]=useState<any>(null);
   const [exporting,setExporting]=useState(false); const [exportMessage,setExportMessage]=useState("");
   data=activeData;
   const exportPptx=async()=>{try{setExporting(true);setExportMessage("");await exportInventoryPptx(data);setExportMessage("現代商務資訊圖表簡報已產生並下載。");}catch(reason){console.error(reason);setExportMessage("簡報產生失敗，請稍後再試。");}finally{setExporting(false);}};
-  const content=useMemo(()=>tab==="Executive"?<Executive setTab={setTab}/>:tab==="QoQ"?<QoQPage/>:tab==="Plan"?<PlanPage/>:<InventoryPage group={tab as "ALL"|"FORGN"|"LP3"|"KD"}/>,[tab,activeData]);
+  const content=useMemo(()=>!started||!activeData?null:tab==="Executive"?<Executive setTab={setTab}/>:tab==="QoQ"?<QoQPage/>:tab==="Plan"?<PlanPage/>:<InventoryPage group={tab as "ALL"|"FORGN"|"LP3"|"KD"}/>,[started,tab,activeData]);
   if(!started)return <Setup onRun={(result)=>{data=result;setActiveData(result);setPeriod(result.meta.quarters.join("–"));setStarted(true)}}/>;
   return <div className="app-shell"><aside><div className="side-brand"><div className="brand-mark">MY</div><div><b>My Inventory</b><span>Intelligence</span></div></div><nav>{tabs.map(t=><button key={t.key} className={tab===t.key?"active":""} onClick={()=>setTab(t.key)}><Icon name={t.key==="Plan"?"plan":t.key==="QoQ"?"trend":t.key==="Executive"?"grid":"box"}/><span>{t.label}</span>{t.key==="KD"&&!((data.groups as Record<string, unknown>).KD)&&<i>0</i>}</button>)}</nav><div className="side-note"><b>分析基準</b><span>FORGN 1.6 月</span><span>LP3 2.2 日</span></div><button className="reset" onClick={()=>setStarted(false)}><Icon name="settings"/>重新設定</button></aside>
     <main className="dashboard"><header className="topbar"><div className="crumb"><b>{data.meta.model}</b><span>/</span><em>{tab}</em></div><div><select value={period} onChange={e=>setPeriod(e.target.value)} aria-label="分析期間"><option>{data.meta.quarters.join("–")}</option><option>{data.meta.latestQuarter}</option></select><button className="print-export" onClick={()=>window.print()}>列印報表</button><button className="export pptx-export" onClick={exportPptx} disabled={exporting}>{exporting?"產生中…":"匯出 PPTX"}</button><span className="avatar">{data.meta.model}</span></div></header>{exportMessage&&<div className="export-toast" role="status">{exportMessage}<button aria-label="關閉通知" onClick={()=>setExportMessage("")}>×</button></div>}<div className="content">{content}</div><footer className="page-footer">My Inventory Intelligence · {data.meta.model} · 金額單位：萬元</footer></main>

@@ -22,6 +22,12 @@
 # generated reports and local analysis
 /outputs/
 /work/
+*.csv
+*.xlsx
+*.xls
+*.xlsm
+*.pptx
+*.zip
 
 # local databases and caches
 *.db
@@ -34,6 +40,11 @@ __pycache__/
 # environment and secrets
 .env*
 *.pem
+*.key
+*.p12
+*.pfx
+secrets.toml
+.dev.vars*
 
 # editor and OS files
 .DS_Store

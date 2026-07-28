@@ -25,17 +25,8 @@ test("server-renders the inventory analysis setup page", async () => {
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
-test("ships verified inventory and plan datasets", async () => {
-  const [source, raw] = await Promise.all([
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/data/dashboard.json", import.meta.url), "utf8"),
-  ]);
-  const data = JSON.parse(raw);
-  assert.deepEqual(data.meta.quarters, ["Q1", "Q2", "Q3"]);
-  assert.deepEqual(data.quarters.map((q) => q.records), [309, 306, 324]);
-  assert.equal(data.plans.previous.label, "RV計");
-  assert.equal(data.plans.current.label, "RV計");
-  assert.equal(data.plans.modelMismatch, false);
+test("ships production analysis without embedded company data", async () => {
+  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(source, /Executive/);
   assert.match(source, /QoQ Analysis/);
   assert.match(source, /Plan Stability/);
@@ -46,6 +37,7 @@ test("ships verified inventory and plan datasets", async () => {
   assert.match(source, /QoQ 季度變化/);
   assert.match(source, /1\.0x 代表/);
   assert.match(source, /analyzeUploads/);
+  assert.doesNotMatch(source, /dashboard\.json|seedData/);
 });
 
 test("includes production spreadsheet parsing and validation", async () => {

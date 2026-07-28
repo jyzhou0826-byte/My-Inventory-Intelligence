@@ -32,6 +32,20 @@ pnpm run build
 - 生產計畫差異、備料調整與庫存影響分析
 - 管理層儀表板 PPTX 匯出
 
+## 正式部署
+
+本專案以 GitHub `main` 作為唯一正式版本來源，並透過 GitHub Actions 自動部署到 Cloudflare Workers。
+
+```bash
+pnpm install --frozen-lockfile
+pnpm test
+pnpm deploy
+```
+
+GitHub Repository Secrets 必須設定 `CLOUDFLARE_API_TOKEN` 與
+`CLOUDFLARE_ACCOUNT_ID`。完整相容性與資料安全稽核請見
+`docs/cloudflare-workers-architecture.md`。
+
 ## 專案結構
 
 - `app/`：Dashboard、分析邏輯及 PPTX 匯出
