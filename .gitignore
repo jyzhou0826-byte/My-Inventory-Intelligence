@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnpm-store/
@@ -14,30 +12,40 @@
 # testing
 /coverage
 
-# next.js
+# framework and build outputs
 /.next/
 /.vinext/
 /out/
+/dist/
+/.wrangler/
 
-# misc
-.DS_Store
+# generated reports and local analysis
+/outputs/
+/work/
+
+# local databases and caches
+*.db
+*.db-journal
+__pycache__/
+*.py[codz]
+.pytest_cache/
+.ruff_cache/
+
+# environment and secrets
+.env*
 *.pem
 
-# debug
+# editor and OS files
+.DS_Store
+.vscode/
+.idea/
+
+# debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
+# platform-specific
 .vercel
-
-# typescript
 next-env.d.ts
-/dist/
-/.wrangler/
-/outputs/
-/work/
